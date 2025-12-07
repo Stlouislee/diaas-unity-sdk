@@ -1,0 +1,23 @@
+{
+  "name": "uoa.aroaro.diaas-unity-sdk",
+  "version": "1.0.0",
+  "displayName": "DIaaS Unity SDK",
+  "description": "Unity SDK for Data Infrastructure as a Service (DIaaS), supporting Tabular and Graph datasets.",
+  "unity": "2021.3",
+  "documentationUrl": "https://github.com/Stlouislee/DIaaS",
+  "changelogUrl": "https://github.com/Stlouislee/DIaaS/releases",
+  "licensesUrl": "https://github.com/Stlouislee/DIaaS/blob/main/LICENSE",
+  "keywords": [
+    "diaas",
+    "database",
+    "graph",
+    "tabular",
+    "sdk",
+    "networking"
+  ],
+  "author": {
+    "name": "Stephen",
+    "email": "stlouislee@outlook.com",
+    "url": "https://github.com/Stlouislee"
+  }
+}
