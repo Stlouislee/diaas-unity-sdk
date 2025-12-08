@@ -10,6 +10,7 @@ namespace DIaaS
 
         [SerializeField] private DIaaSConfig config;
 
+        public UserService Users { get; private set; }
         public SessionService Sessions { get; private set; }
         public TabularService Tabular { get; private set; }
         public GraphService Graph { get; private set; }
@@ -40,6 +41,7 @@ namespace DIaaS
             
             DIaaSClient.Instance.Initialize(config);
 
+            Users = new UserService();
             Sessions = new SessionService();
             Tabular = new TabularService();
             Graph = new GraphService();

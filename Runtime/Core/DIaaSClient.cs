@@ -53,6 +53,7 @@ namespace DIaaS.Core
             string url = CombineUrl(config.BaseUrl, endpoint);
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
+                webRequest.timeout = config.Timeout;
                 AttachHeaders(webRequest);
                 yield return webRequest.SendWebRequest();
 
@@ -60,20 +61,44 @@ namespace DIaaS.Core
             }
         }
 
+        /// <summary>
+        /// GET request that returns raw JSON string (useful for dynamic/complex responses)
+        /// </summary>
+        public IEnumerator GetRequestRaw(string endpoint, Action<string> onSuccess, Action<string> onError)
+        {
+            string url = CombineUrl(config.BaseUrl, endpoint);
+            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+            {
+                webRequest.timeout = config.Timeout;
+                AttachHeaders(webRequest);
+                yield return webRequest.SendWebRequest();
+
+                if (webRequest.result == UnityWebRequest.Result.Success)
+                {
+                    onSuccess?.Invoke(webRequest.downloadHandler.text);
+                }
+                else
+                {
+                    onError?.Invoke(webRequest.error + ": " + webRequest.downloadHandler.text);
+                }
+            }
+        }
+
         public IEnumerator PostRequest<T>(string endpoint, object body, Action<T> onSuccess, Action<string> onError)
         {
             string url = CombineUrl(config.BaseUrl, endpoint);
             string jsonBody = JsonUtility.ToJson(body);
-            yield return PostRequestRaw(url, jsonBody, onSuccess, onError);
+            yield return PostRequestInternal(url, jsonBody, onSuccess, onError);
         }
 
-        public IEnumerator PostRequestRaw<T>(string url, string jsonBody, Action<T> onSuccess, Action<string> onError)
+        private IEnumerator PostRequestInternal<T>(string url, string jsonBody, Action<T> onSuccess, Action<string> onError)
         {
             using (UnityWebRequest webRequest = new UnityWebRequest(url, "POST"))
             {
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
                 webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
                 webRequest.downloadHandler = new DownloadHandlerBuffer();
+                webRequest.timeout = config.Timeout;
                 AttachHeaders(webRequest);
 
                 yield return webRequest.SendWebRequest();
@@ -85,7 +110,34 @@ namespace DIaaS.Core
         public IEnumerator PostRequest<T>(string endpoint, string jsonBody, Action<T> onSuccess, Action<string> onError)
         {
             string url = CombineUrl(config.BaseUrl, endpoint);
-            yield return PostRequestRaw(url, jsonBody, onSuccess, onError);
+            yield return PostRequestInternal(url, jsonBody, onSuccess, onError);
+        }
+
+        /// <summary>
+        /// POST request that returns raw JSON string (useful for dynamic/complex responses)
+        /// </summary>
+        public IEnumerator PostRequestRawResponse(string endpoint, string jsonBody, Action<string> onSuccess, Action<string> onError)
+        {
+            string url = CombineUrl(config.BaseUrl, endpoint);
+            using (UnityWebRequest webRequest = new UnityWebRequest(url, "POST"))
+            {
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
+                webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                webRequest.downloadHandler = new DownloadHandlerBuffer();
+                webRequest.timeout = config.Timeout;
+                AttachHeaders(webRequest);
+
+                yield return webRequest.SendWebRequest();
+
+                if (webRequest.result == UnityWebRequest.Result.Success)
+                {
+                    onSuccess?.Invoke(webRequest.downloadHandler.text);
+                }
+                else
+                {
+                    onError?.Invoke(webRequest.error + ": " + webRequest.downloadHandler.text);
+                }
+            }
         }
 
         public IEnumerator DeleteRequest(string endpoint, Action onSuccess, Action<string> onError)
@@ -93,6 +145,7 @@ namespace DIaaS.Core
             string url = CombineUrl(config.BaseUrl, endpoint);
             using (UnityWebRequest webRequest = UnityWebRequest.Delete(url))
             {
+                webRequest.timeout = config.Timeout;
                 AttachHeaders(webRequest);
                 yield return webRequest.SendWebRequest();
 
@@ -166,12 +219,39 @@ namespace DIaaS.Core
                 }
                 catch (Exception e)
                 {
-                    onError?.Invoke("JSON Parse Error: " + e.Message);
+                    onError?.Invoke($"JSON Parse Error: {e.Message}\\nResponse: {request.downloadHandler.text}");
                 }
             }
             else
             {
-                onError?.Invoke(request.error + ": " + request.downloadHandler.text);
+                // Provide detailed error information for debugging
+                string errorDetail = $"HTTP {request.responseCode}";
+                if (!string.IsNullOrEmpty(request.error))
+                {
+                    errorDetail += $" - {request.error}";
+                }
+                
+                string responseBody = request.downloadHandler?.text ?? "";
+                if (!string.IsNullOrEmpty(responseBody))
+                {
+                    errorDetail += $"\\nResponse: {responseBody}";
+                }
+                
+                // Add hint for common errors
+                if (request.responseCode == 401 || request.responseCode == 403)
+                {
+                    errorDetail += "\\n[Hint] Authentication error - check your API Key in DIaaSConfig";
+                }
+                else if (request.responseCode == 404)
+                {
+                    errorDetail += "\\n[Hint] Endpoint not found - check your BaseUrl in DIaaSConfig";
+                }
+                else if (request.responseCode == 500)
+                {
+                    errorDetail += "\\n[Hint] Server error - this may be caused by missing/invalid API Key or malformed request";
+                }
+                
+                onError?.Invoke(errorDetail);
             }
         }
 

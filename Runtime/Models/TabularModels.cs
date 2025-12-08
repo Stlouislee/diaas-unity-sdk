@@ -35,8 +35,9 @@ namespace DIaaS.Models
         public string id;
         public string session_id;
         public string name;
-        public string table_name;
+        public string table_name; // The actual PostgreSQL table name
         public string created_at;
+        public string updated_at;
     }
 
     [Serializable]

@@ -7,7 +7,7 @@ namespace DIaaS.Models
     {
         public string query;
         public string type; // "sql" or "cypher"
-        // params is Dict[str, Any]
+        // params is Dict[str, Any] - must be serialized manually
     }
 
     [Serializable]
@@ -15,6 +15,30 @@ namespace DIaaS.Models
     {
         public string status;
         public int count;
-        // data is List[Dict] or similar.
+        public int rowcount; // For non-SELECT SQL queries
+        // data is returned as raw JSON string since Unity's JsonUtility can't handle dynamic dictionaries
+        // Use dataRaw and parse manually with your preferred JSON library
+        public string dataRaw;
+    }
+
+    /// <summary>
+    /// Response wrapper for tabular record queries
+    /// </summary>
+    [Serializable]
+    public class TabularQueryResponse
+    {
+        public int count;
+        // data contains the rows - stored as raw JSON for manual parsing
+        public string dataRaw;
+    }
+
+    /// <summary>
+    /// Response wrapper for insert operations
+    /// </summary>
+    [Serializable]
+    public class InsertResponse
+    {
+        public string status;
+        public int count;
     }
 }

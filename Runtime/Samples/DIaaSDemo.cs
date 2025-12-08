@@ -26,10 +26,26 @@ namespace DIaaS.Samples
             }
         }
 
-        [ContextMenu("Run Full Test")]
+        [ContextMenu("1. Register New User (Get API Key)")]
+        public void RegisterUser()
+        {
+            Debug.Log("Registering new user to get API key...");
+            DIaaSManager.Instance.Users.Register(
+                (response) => {
+                    Debug.Log($"[Success] User Registered!");
+                    Debug.Log($"  User ID: {response.user_id}");
+                    Debug.Log($"  API Key: {response.api_key}");
+                    Debug.Log($"  IMPORTANT: Copy this API Key to your DIaaSConfig asset!");
+                },
+                (err) => Debug.LogError($"[Error] Registration failed: {err}")
+            );
+        }
+
+        [ContextMenu("2. Run Full Test (Requires API Key)")]
         public void RunTest()
         {
             Debug.Log("Starting DIaaS Test...");
+            Debug.Log("Note: Make sure you have set a valid API Key in DIaaSConfig!");
             CreateSession();
         }
 
@@ -69,8 +85,8 @@ namespace DIaaS.Samples
             string jsonRows = "{\"rows\": [{\"id\": 1, \"username\": \"PlayerOne\", \"score\": 100}, {\"id\": 2, \"username\": \"PlayerTwo\", \"score\": 250}]}";
 
             DIaaSManager.Instance.Tabular.InsertRecords(currentSessionId, tabularDatasetId, jsonRows,
-                (msg) => {
-                    Debug.Log($"[Success] Rows Inserted");
+                (response) => {
+                    Debug.Log($"[Success] Rows Inserted. Count: {response.count}");
                     QueryTabularData();
                 },
                 (err) => Debug.LogError($"[Error] Insert Rows: {err}")
@@ -81,7 +97,7 @@ namespace DIaaS.Samples
         {
             DIaaSManager.Instance.Tabular.QueryRecords(currentSessionId, tabularDatasetId, 10, 0,
                 (response) => {
-                    Debug.Log($"[Success] Query Executed. Status: {response.status}");
+                    Debug.Log($"[Success] Query Executed. Count: {response.count}");
                     CreateGraphData();
                 },
                 (err) => Debug.LogError($"[Error] Query: {err}")

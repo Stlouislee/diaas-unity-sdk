@@ -16,22 +16,23 @@ namespace DIaaS.Models
         public string session_id;
         public string name;
         public string created_at;
+        public string updated_at;
     }
 
     [Serializable]
     public class NodeCreate
     {
         public string label;
-        // Properties is Dict[str, Any]. 
-        // Unity JsonUtility limitation applies.
+        // Properties should be passed as raw JSON string to the service methods
     }
 
     [Serializable]
     public class NodeResponse
     {
         public int id;
-        // labels in Neo4j are list, JsonUtility might struggle if it's ["A", "B"]
-        // properties is a dictionary
+        public string label;
+        // Properties are returned in raw JSON format
+        // Use a JSON parser to access properties
     }
 
     [Serializable]
@@ -40,7 +41,7 @@ namespace DIaaS.Models
         public int from_node_id;
         public int to_node_id;
         public string type;
-        // Properties is Dict[str, Any].
+        // Properties should be passed as raw JSON string to the service methods
     }
 
     [Serializable]
@@ -50,5 +51,6 @@ namespace DIaaS.Models
         public string type;
         public int start_node_id;
         public int end_node_id;
+        // Properties are returned in raw JSON format
     }
 }
