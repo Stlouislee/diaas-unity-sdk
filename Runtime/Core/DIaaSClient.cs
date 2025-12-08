@@ -125,9 +125,16 @@ namespace DIaaS.Core
             {
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
                 webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                webRequest.uploadHandler.contentType = "application/json";
                 webRequest.downloadHandler = new DownloadHandlerBuffer();
                 webRequest.timeout = config.Timeout;
-                AttachHeaders(webRequest);
+                
+                // Set API key header
+                if (!string.IsNullOrEmpty(config.ApiKey))
+                {
+                    webRequest.SetRequestHeader("X-API-Key", config.ApiKey);
+                    Debug.Log($"[DIaaS] Header: X-API-Key set");
+                }
 
                 yield return webRequest.SendWebRequest();
 
@@ -147,13 +154,20 @@ namespace DIaaS.Core
         public IEnumerator PostRequestRawResponse(string endpoint, string jsonBody, Action<string> onSuccess, Action<string> onError)
         {
             string url = CombineUrl(config.BaseUrl, endpoint);
+            Debug.Log($"[DIaaS] POST (raw) {url}");
             using (UnityWebRequest webRequest = new UnityWebRequest(url, "POST"))
             {
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
                 webRequest.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                webRequest.uploadHandler.contentType = "application/json";
                 webRequest.downloadHandler = new DownloadHandlerBuffer();
                 webRequest.timeout = config.Timeout;
-                AttachHeaders(webRequest);
+                
+                // Set API key header
+                if (!string.IsNullOrEmpty(config.ApiKey))
+                {
+                    webRequest.SetRequestHeader("X-API-Key", config.ApiKey);
+                }
 
                 yield return webRequest.SendWebRequest();
 
@@ -214,6 +228,11 @@ namespace DIaaS.Core
             if (!string.IsNullOrEmpty(config.ApiKey))
             {
                 request.SetRequestHeader("X-API-Key", config.ApiKey);
+                Debug.Log($"[DIaaS] Header set: X-API-Key = {config.ApiKey}");
+            }
+            else
+            {
+                Debug.LogWarning("[DIaaS] No API Key configured!");
             }
         }
 
