@@ -28,6 +28,24 @@ namespace DIaaS.Core
         public void Initialize(DIaaSConfig configuration)
         {
             config = configuration;
+            config.BaseUrl = NormalizeBaseUrl(config.BaseUrl);
+        }
+
+        private string NormalizeBaseUrl(string baseUrl)
+        {
+            if (string.IsNullOrWhiteSpace(baseUrl)) return baseUrl;
+
+            const string requiredPath = "/api/v1";
+            string trimmed = baseUrl.Trim().TrimEnd('/');
+
+            if (!trimmed.Contains(requiredPath))
+            {
+                string normalized = trimmed + requiredPath;
+                Debug.LogWarning($"DIaaS BaseUrl missing '{requiredPath}', normalized to: {normalized}");
+                return normalized;
+            }
+
+            return trimmed;
         }
 
         public IEnumerator GetRequest<T>(string endpoint, Action<T> onSuccess, Action<string> onError)
