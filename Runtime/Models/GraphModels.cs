@@ -27,11 +27,28 @@ namespace DIaaS.Models
     }
 
     [Serializable]
+    public class NodeResponse
+    {
+        public int id;
+        // labels in Neo4j are list, JsonUtility might struggle if it's ["A", "B"]
+        // properties is a dictionary
+    }
+
+    [Serializable]
     public class EdgeCreate
     {
         public int from_node_id;
         public int to_node_id;
         public string type;
         // Properties is Dict[str, Any].
+    }
+
+    [Serializable]
+    public class EdgeResponse
+    {
+        public int id;
+        public string type;
+        public int start_node_id;
+        public int end_node_id;
     }
 }

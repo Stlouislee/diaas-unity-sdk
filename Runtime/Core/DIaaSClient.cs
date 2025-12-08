@@ -32,7 +32,7 @@ namespace DIaaS.Core
 
         public IEnumerator GetRequest<T>(string endpoint, Action<T> onSuccess, Action<string> onError)
         {
-            string url = $"{config.BaseUrl}{endpoint}";
+            string url = CombineUrl(config.BaseUrl, endpoint);
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
                 AttachHeaders(webRequest);
@@ -44,7 +44,7 @@ namespace DIaaS.Core
 
         public IEnumerator PostRequest<T>(string endpoint, object body, Action<T> onSuccess, Action<string> onError)
         {
-            string url = $"{config.BaseUrl}{endpoint}";
+            string url = CombineUrl(config.BaseUrl, endpoint);
             string jsonBody = JsonUtility.ToJson(body);
             yield return PostRequestRaw(url, jsonBody, onSuccess, onError);
         }
@@ -66,13 +66,13 @@ namespace DIaaS.Core
 
         public IEnumerator PostRequest<T>(string endpoint, string jsonBody, Action<T> onSuccess, Action<string> onError)
         {
-            string url = $"{config.BaseUrl}{endpoint}";
+            string url = CombineUrl(config.BaseUrl, endpoint);
             yield return PostRequestRaw(url, jsonBody, onSuccess, onError);
         }
 
         public IEnumerator DeleteRequest(string endpoint, Action onSuccess, Action<string> onError)
         {
-            string url = $"{config.BaseUrl}{endpoint}";
+            string url = CombineUrl(config.BaseUrl, endpoint);
             using (UnityWebRequest webRequest = UnityWebRequest.Delete(url))
             {
                 AttachHeaders(webRequest);
@@ -87,6 +87,26 @@ namespace DIaaS.Core
                     onError?.Invoke(webRequest.error + ": " + webRequest.downloadHandler.text);
                 }
             }
+        }
+
+        private string CombineUrl(string baseUri, string relativeUri)
+        {
+            if (string.IsNullOrEmpty(baseUri)) return relativeUri;
+            if (string.IsNullOrEmpty(relativeUri)) return baseUri;
+
+            baseUri = baseUri.Trim();
+            relativeUri = relativeUri.Trim();
+
+            if (baseUri.EndsWith("/"))
+            {
+                baseUri = baseUri.Substring(0, baseUri.Length - 1);
+            }
+            if (relativeUri.StartsWith("/"))
+            {
+                relativeUri = relativeUri.Substring(1);
+            }
+
+            return $"{baseUri}/{relativeUri}";
         }
 
         private void AttachHeaders(UnityWebRequest request)

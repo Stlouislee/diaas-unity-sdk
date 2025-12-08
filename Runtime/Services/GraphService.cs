@@ -14,21 +14,19 @@ namespace DIaaS.Services
             DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.PostRequest<GraphDatasetResponse>($"{Endpoint}/{sessionId}/datasets/graph", body, onSuccess, onError));
         }
 
-        public void CreateNode(string sessionId, string datasetId, string label, string propertiesJson, Action<string> onSuccess, Action<string> onError)
+        public void CreateNode(string sessionId, string datasetId, string label, string propertiesJson, Action<NodeResponse> onSuccess, Action<string> onError)
         {
             // propertiesJson should be a JSON object string e.g. {"name": "Alice"}
             string jsonBody = $"{{\"label\": \"{label}\", \"properties\": {propertiesJson}}}";
             
-            // The response is the created node (dict). We can just return success or the raw string if we had a way.
-            // For now, we treat it as object.
-            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.PostRequest<object>($"{Endpoint}/{sessionId}/datasets/graph/{datasetId}/nodes", jsonBody, (res) => onSuccess("Node Created"), onError));
+            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.PostRequest<NodeResponse>($"{Endpoint}/{sessionId}/datasets/graph/{datasetId}/nodes", jsonBody, onSuccess, onError));
         }
 
-        public void CreateEdge(string sessionId, string datasetId, int fromId, int toId, string type, string propertiesJson, Action<string> onSuccess, Action<string> onError)
+        public void CreateEdge(string sessionId, string datasetId, int fromId, int toId, string type, string propertiesJson, Action<EdgeResponse> onSuccess, Action<string> onError)
         {
             string jsonBody = $"{{\"from_node_id\": {fromId}, \"to_node_id\": {toId}, \"type\": \"{type}\", \"properties\": {propertiesJson}}}";
             
-            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.PostRequest<object>($"{Endpoint}/{sessionId}/datasets/graph/{datasetId}/edges", jsonBody, (res) => onSuccess("Edge Created"), onError));
+            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.PostRequest<EdgeResponse>($"{Endpoint}/{sessionId}/datasets/graph/{datasetId}/edges", jsonBody, onSuccess, onError));
         }
 
         public void ListNodes(string sessionId, string datasetId, string label, Action<QueryResponse> onSuccess, Action<string> onError)
