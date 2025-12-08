@@ -26,6 +26,19 @@ namespace DIaaS.Samples
             }
         }
 
+        [ContextMenu("0. Test Connection (Health Check)")]
+        public void HealthCheck()
+        {
+            Debug.Log("Testing connection to DIaaS server...");
+            DIaaSManager.Instance.Users.HealthCheck(
+                (response) => {
+                    Debug.Log($"[Success] Server is healthy!");
+                    Debug.Log($"  Response: {response}");
+                },
+                (err) => Debug.LogError($"[Error] Health check failed: {err}")
+            );
+        }
+
         [ContextMenu("1. Register New User (Get API Key)")]
         public void RegisterUser()
         {

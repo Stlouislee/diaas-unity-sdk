@@ -29,6 +29,21 @@ namespace DIaaS.Core
         {
             config = configuration;
             config.BaseUrl = NormalizeBaseUrl(config.BaseUrl);
+            Debug.Log($"[DIaaS] Initialized with BaseUrl: {config.BaseUrl}");
+        }
+
+        /// <summary>
+        /// Get the root URL (without /api/v1) for health checks
+        /// </summary>
+        public string GetBaseUrlRoot()
+        {
+            if (string.IsNullOrEmpty(config.BaseUrl)) return "";
+            int apiIndex = config.BaseUrl.IndexOf("/api/");
+            if (apiIndex > 0)
+            {
+                return config.BaseUrl.Substring(0, apiIndex);
+            }
+            return config.BaseUrl;
         }
 
         private string NormalizeBaseUrl(string baseUrl)
@@ -51,6 +66,7 @@ namespace DIaaS.Core
         public IEnumerator GetRequest<T>(string endpoint, Action<T> onSuccess, Action<string> onError)
         {
             string url = CombineUrl(config.BaseUrl, endpoint);
+            Debug.Log($"[DIaaS] GET {url}");
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
                 webRequest.timeout = config.Timeout;
@@ -67,6 +83,15 @@ namespace DIaaS.Core
         public IEnumerator GetRequestRaw(string endpoint, Action<string> onSuccess, Action<string> onError)
         {
             string url = CombineUrl(config.BaseUrl, endpoint);
+            yield return GetRequestRawUrl(url, onSuccess, onError);
+        }
+
+        /// <summary>
+        /// GET request to a direct URL (not combined with base URL)
+        /// </summary>
+        public IEnumerator GetRequestRawUrl(string url, Action<string> onSuccess, Action<string> onError)
+        {
+            Debug.Log($"[DIaaS] GET (raw) {url}");
             using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
                 webRequest.timeout = config.Timeout;
@@ -93,6 +118,9 @@ namespace DIaaS.Core
 
         private IEnumerator PostRequestInternal<T>(string url, string jsonBody, Action<T> onSuccess, Action<string> onError)
         {
+            Debug.Log($"[DIaaS] POST {url}");
+            Debug.Log($"[DIaaS] Body: {jsonBody}");
+            Debug.Log($"[DIaaS] API Key: {(string.IsNullOrEmpty(config.ApiKey) ? "NOT SET" : "***" + config.ApiKey.Substring(config.ApiKey.Length - 4))}");
             using (UnityWebRequest webRequest = new UnityWebRequest(url, "POST"))
             {
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);

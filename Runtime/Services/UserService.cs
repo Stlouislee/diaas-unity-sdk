@@ -1,6 +1,7 @@
 using System;
 using DIaaS.Core;
 using DIaaS.Models;
+using UnityEngine;
 
 namespace DIaaS.Services
 {
@@ -21,7 +22,22 @@ namespace DIaaS.Services
         /// <param name="onError">Error callback</param>
         public void Register(Action<UserRegistrationResponse> onSuccess, Action<string> onError)
         {
+            Debug.Log("[DIaaS] Registering new user...");
             DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.PostRequest<UserRegistrationResponse>($"{Endpoint}/register", "{}", onSuccess, onError));
+        }
+
+        /// <summary>
+        /// Test the API connection by checking the health endpoint.
+        /// This does NOT require authentication.
+        /// </summary>
+        /// <param name="onSuccess">Callback with raw JSON response</param>
+        /// <param name="onError">Error callback</param>
+        public void HealthCheck(Action<string> onSuccess, Action<string> onError)
+        {
+            // Health endpoint is at the root, not under /api/v1
+            string healthUrl = DIaaSClient.Instance.GetBaseUrlRoot() + "/health";
+            Debug.Log($"[DIaaS] Health check: {healthUrl}");
+            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.GetRequestRawUrl(healthUrl, onSuccess, onError));
         }
     }
 }
