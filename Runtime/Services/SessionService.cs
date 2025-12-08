@@ -53,6 +53,27 @@ namespace DIaaS.Services
             DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.DeleteRequest($"{Endpoint}/{sessionId}", onSuccess, onError));
         }
 
+        /// <summary>
+        /// List all sessions with full dataset information (returns raw JSON)
+        /// </summary>
+        /// <param name="onSuccess">Callback with raw JSON array of sessions</param>
+        /// <param name="onError">Error callback</param>
+        public void ListSessionsRaw(Action<string> onSuccess, Action<string> onError)
+        {
+            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.GetRequestRaw(Endpoint + "/", onSuccess, onError));
+        }
+
+        /// <summary>
+        /// Get details of a specific session (returns raw JSON with full dataset info)
+        /// </summary>
+        /// <param name="sessionId">The session ID</param>
+        /// <param name="onSuccess">Callback with raw JSON session data</param>
+        /// <param name="onError">Error callback</param>
+        public void GetSessionRaw(string sessionId, Action<string> onSuccess, Action<string> onError)
+        {
+            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.GetRequestRaw($"{Endpoint}/{sessionId}", onSuccess, onError));
+        }
+
         private string EscapeJsonString(string value)
         {
             if (string.IsNullOrEmpty(value)) return value;

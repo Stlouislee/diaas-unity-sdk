@@ -8,15 +8,6 @@ namespace DIaaS.Samples
 {
     public class DIaaSDemo : MonoBehaviour
     {
-        [SerializeField] private string sessionName = "UnityDemoSession";
-        
-        private string currentSessionId;
-        private string tabularDatasetId;
-        private string graphDatasetId;
-
-        private int node1Id;
-        private int node2Id;
-
         void Start()
         {
             if (DIaaSManager.Instance == null)
@@ -54,114 +45,134 @@ namespace DIaaS.Samples
             );
         }
 
-        [ContextMenu("2. Run Full Test (Requires API Key)")]
-        public void RunTest()
+        [ContextMenu("2. List All Sessions and Data (Read Only)")]
+        public void ListAllData()
         {
-            Debug.Log("Starting DIaaS Test...");
+            Debug.Log("=== Fetching All Sessions and Data ===");
             Debug.Log("Note: Make sure you have set a valid API Key in DIaaSConfig!");
-            CreateSession();
-        }
-
-        void CreateSession()
-        {
-            DIaaSManager.Instance.Sessions.CreateSession(sessionName, "Session created by Unity SDK Demo",
-                (session) => {
-                    currentSessionId = session.id;
-                    Debug.Log($"[Success] Session Created: {session.id}");
-                    CreateTabularData();
-                },
-                (err) => Debug.LogError($"[Error] Create Session: {err}")
-            );
-        }
-
-        void CreateTabularData()
-        {
-            var columns = new ColumnDefinition[] 
-            {
-                new ColumnDefinition { name = "id", type = "int" },
-                new ColumnDefinition { name = "username", type = "text" },
-                new ColumnDefinition { name = "score", type = "int" }
-            };
-
-            DIaaSManager.Instance.Tabular.CreateTabularDataset(currentSessionId, "PlayerScores", columns,
-                (dataset) => {
-                    tabularDatasetId = dataset.id;
-                    Debug.Log($"[Success] Tabular Dataset Created: {dataset.id}");
-                    InsertTabularData();
-                },
-                (err) => Debug.LogError($"[Error] Create Tabular: {err}")
-            );
-        }
-
-        void InsertTabularData()
-        {
-            string jsonRows = "{\"rows\": [{\"id\": 1, \"username\": \"PlayerOne\", \"score\": 100}, {\"id\": 2, \"username\": \"PlayerTwo\", \"score\": 250}]}";
-
-            DIaaSManager.Instance.Tabular.InsertRecords(currentSessionId, tabularDatasetId, jsonRows,
-                (response) => {
-                    Debug.Log($"[Success] Rows Inserted. Count: {response.count}");
-                    QueryTabularData();
-                },
-                (err) => Debug.LogError($"[Error] Insert Rows: {err}")
-            );
-        }
-
-        void QueryTabularData()
-        {
-            DIaaSManager.Instance.Tabular.QueryRecords(currentSessionId, tabularDatasetId, 10, 0,
-                (response) => {
-                    Debug.Log($"[Success] Query Executed. Count: {response.count}");
-                    CreateGraphData();
-                },
-                (err) => Debug.LogError($"[Error] Query: {err}")
-            );
-        }
-
-        void CreateGraphData()
-        {
-            DIaaSManager.Instance.Graph.CreateGraphDataset(currentSessionId, "GameLevelGraph",
-                (dataset) => {
-                    graphDatasetId = dataset.id;
-                    Debug.Log($"[Success] Graph Dataset Created: {dataset.id}");
-                    CreateNodes();
-                },
-                (err) => Debug.LogError($"[Error] Create Graph: {err}")
-            );
-        }
-
-        void CreateNodes()
-        {
-            string props1 = "{\"name\": \"StartRoom\", \"type\": \"safe\"}";
-            string props2 = "{\"name\": \"BossRoom\", \"type\": \"danger\"}";
-
-            DIaaSManager.Instance.Graph.CreateNode(currentSessionId, graphDatasetId, "Room", props1,
-                (node) => {
-                    node1Id = node.id;
-                    Debug.Log($"[Success] Node 1 Created: {node.id}");
+            
+            DIaaSManager.Instance.Sessions.ListSessionsRaw(
+                (json) => {
+                    Debug.Log("[Success] Sessions Retrieved:");
+                    Debug.Log(json);
                     
-                    DIaaSManager.Instance.Graph.CreateNode(currentSessionId, graphDatasetId, "Room", props2,
-                        (node2) => {
-                            node2Id = node2.id;
-                            Debug.Log($"[Success] Node 2 Created: {node2.id}");
-                            CreateEdge();
-                        },
-                        (err) => Debug.LogError($"[Error] Create Node 2: {err}")
-                    );
+                    // Parse sessions and fetch details for each
+                    ParseAndFetchSessionDetails(json);
                 },
-                (err) => Debug.LogError($"[Error] Create Node 1: {err}")
+                (err) => Debug.LogError($"[Error] List Sessions: {err}")
             );
         }
 
-        void CreateEdge()
+        void ParseAndFetchSessionDetails(string sessionsJson)
         {
-            string props = "{\"distance\": 10}";
-            DIaaSManager.Instance.Graph.CreateEdge(currentSessionId, graphDatasetId, node1Id, node2Id, "CONNECTS_TO", props,
-                (edge) => {
-                    Debug.Log($"[Success] Edge Created: {edge.id}");
-                    Debug.Log("Test Complete!");
+            // Simple JSON array parsing (Unity's JsonUtility needs wrapper)
+            // The response is an array like: [{...}, {...}]
+            
+            // Try to parse using a wrapper approach
+            string wrappedJson = "{\"sessions\":" + sessionsJson + "}";
+            SessionsWrapper wrapper = JsonUtility.FromJson<SessionsWrapper>(wrappedJson);
+            
+            if (wrapper == null || wrapper.sessions == null || wrapper.sessions.Length == 0)
+            {
+                Debug.Log("No sessions found for this user.");
+                return;
+            }
+
+            Debug.Log($"\n=== Found {wrapper.sessions.Length} Session(s) ===\n");
+
+            foreach (var session in wrapper.sessions)
+            {
+                Debug.Log($"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                Debug.Log($"SESSION: {session.name}");
+                Debug.Log($"  ID: {session.id}");
+                Debug.Log($"  Description: {session.description}");
+                Debug.Log($"  Created: {session.created_at}");
+                
+                // Fetch full session details to get datasets
+                FetchSessionDetails(session.id, session.name);
+            }
+        }
+
+        void FetchSessionDetails(string sessionId, string sessionName)
+        {
+            DIaaSManager.Instance.Sessions.GetSessionRaw(sessionId,
+                (json) => {
+                    Debug.Log($"\n[Session: {sessionName}] Full Details:");
+                    Debug.Log(json);
+                    
+                    // Parse to get dataset info
+                    SessionDetailWrapper detail = JsonUtility.FromJson<SessionDetailWrapper>("{\"session\":" + json + "}");
+                    
+                    if (detail?.session != null)
+                    {
+                        // Check for tabular datasets
+                        if (detail.session.tabular_datasets != null && detail.session.tabular_datasets.Length > 0)
+                        {
+                            Debug.Log($"\n  📊 Tabular Datasets ({detail.session.tabular_datasets.Length}):");
+                            foreach (var ds in detail.session.tabular_datasets)
+                            {
+                                Debug.Log($"    - {ds.name} (ID: {ds.id})");
+                                FetchTabularData(sessionId, ds.id, ds.name);
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log($"  📊 No Tabular Datasets");
+                        }
+
+                        // Check for graph datasets
+                        if (detail.session.graph_datasets != null && detail.session.graph_datasets.Length > 0)
+                        {
+                            Debug.Log($"\n  🔗 Graph Datasets ({detail.session.graph_datasets.Length}):");
+                            foreach (var ds in detail.session.graph_datasets)
+                            {
+                                Debug.Log($"    - {ds.name} (ID: {ds.id})");
+                                FetchGraphData(sessionId, ds.id, ds.name);
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log($"  🔗 No Graph Datasets");
+                        }
+                    }
                 },
-                (err) => Debug.LogError($"[Error] Create Edge: {err}")
+                (err) => Debug.LogError($"[Error] Get Session {sessionId}: {err}")
             );
+        }
+
+        void FetchTabularData(string sessionId, string datasetId, string datasetName)
+        {
+            DIaaSManager.Instance.Tabular.QueryRecordsRaw(sessionId, datasetId, 100, 0,
+                (json) => {
+                    Debug.Log($"\n      📄 Tabular Data for '{datasetName}':");
+                    Debug.Log($"      {json}");
+                },
+                (err) => Debug.LogError($"      [Error] Query Tabular {datasetName}: {err}")
+            );
+        }
+
+        void FetchGraphData(string sessionId, string datasetId, string datasetName)
+        {
+            DIaaSManager.Instance.Graph.ListNodes(sessionId, datasetId, null, 100,
+                (json) => {
+                    Debug.Log($"\n      🔵 Graph Nodes for '{datasetName}':");
+                    Debug.Log($"      {json}");
+                },
+                (err) => Debug.LogError($"      [Error] Query Graph {datasetName}: {err}")
+            );
+        }
+
+        // Helper classes for JSON parsing
+        [System.Serializable]
+        private class SessionsWrapper
+        {
+            public SessionResponse[] sessions;
+        }
+
+        [System.Serializable]
+        private class SessionDetailWrapper
+        {
+            public SessionResponseFull session;
         }
     }
 }

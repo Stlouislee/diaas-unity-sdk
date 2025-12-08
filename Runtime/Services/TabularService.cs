@@ -85,6 +85,21 @@ namespace DIaaS.Services
             DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.GetRequest<TabularQueryResponse>(url, onSuccess, onError));
         }
 
+        /// <summary>
+        /// Query records and return raw JSON (useful when you need to parse dynamic data)
+        /// </summary>
+        /// <param name="sessionId">The session ID</param>
+        /// <param name="datasetId">The dataset ID</param>
+        /// <param name="limit">Maximum number of records to return</param>
+        /// <param name="offset">Number of records to skip</param>
+        /// <param name="onSuccess">Callback with raw JSON response</param>
+        /// <param name="onError">Error callback</param>
+        public void QueryRecordsRaw(string sessionId, string datasetId, int limit, int offset, Action<string> onSuccess, Action<string> onError)
+        {
+            string url = $"{Endpoint}/{sessionId}/datasets/tabular/{datasetId}/records?limit={limit}&offset={offset}";
+            DIaaSClient.Instance.StartCoroutine(DIaaSClient.Instance.GetRequestRaw(url, onSuccess, onError));
+        }
+
         private string EscapeJsonString(string value)
         {
             if (string.IsNullOrEmpty(value)) return value;
